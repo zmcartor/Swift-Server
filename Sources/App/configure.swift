@@ -11,6 +11,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 
     try router.register(collection: AcronymsController())
     try router.register(collection: UsersController())
+    try router.register(collection: CategoriesController())
     try routes(router)
     services.register(router, as: Router.self)
 
@@ -38,6 +39,8 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     // configure the User migration first
     migrations.add(model: User.self, database: .psql)
     migrations.add(model: Acronym.self, database: .psql)
+    migrations.add(model: Category.self, database: .psql)
+    migrations.add(model: AcronymCategoryPivot.self, database: .psql)
     
     services.register(migrations)
 }

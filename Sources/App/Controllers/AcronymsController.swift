@@ -7,19 +7,25 @@ struct AcronymsController : RouteCollection {
     
     func boot(router: Router) throws {
     
-      // group the routes under a namespace. Great!
-      let routeGroup = router.grouped(apiRoot)
-      
-      // register all our routes in here
-      routeGroup.get(use: getAllHandler)
-      routeGroup.get(Acronym.parameter, use: getSingle)
-      routeGroup.patch(Acronym.self, at: Acronym.parameter, use:updateAcro)
+        // group the routes under a namespace. Great!
+        let routeGroup = router.grouped(apiRoot)
+          
+        // register all our routes in here
+        routeGroup.get(use: getAllHandler)
+        routeGroup.get(Acronym.parameter, use: getSingle)
+        routeGroup.patch(Acronym.self, at: Acronym.parameter, use:updateAcro)
+            
+        //  /<id>/user route
+        routeGroup.get(Acronym.parameter, "user", use:getUserHandler)
+          
+        // this entity is being POSTED to it. Not a lookup parameter.
+        routeGroup.post(Acronym.self, use: createAcro)
+            
+        routeGroup.post(Acronym.parameter, "categories", Category.parameter, use: addCategoriesHandler)
+            
+        routeGroup.get(Acronym.parameter, "categories", use: getCategoriesHandler)
         
-       //  /<id>/user route
-      routeGroup.get(Acronym.parameter, "user", use:getUserHandler)
-      
-      // this entity is being POSTED to it. Not a lookup parameter.
-      routeGroup.post(Acronym.self, use: createAcro)
+        routeGroup.delete(Acronym.parameter, "categories", Category.parameter, use:removeCategoriesHandler)
     }
     
     func getAllHandler(_ req: Request) throws -> Future<[Acronym]> {
@@ -53,6 +59,27 @@ struct AcronymsController : RouteCollection {
             .flatMap(to: User.self) { acronym in
                 return acronym.user.get(on: req)
         }
+    }
+    
+    func addCategoriesHandler(_ req:Request) throws -> Future<HTTPStatus> {
+        
+        return try flatMap(to: HTTPStatus.self, req.parameters.next(Acronym.self), req.parameters.next(Category.self)) { ac, cat in
+            return ac.categories.attach(cat, on: req).transform(to: HTTPStatus.created)
+        }
+    }
+    
+    func getCategoriesHandler(_ req: Request) throws -> Future<[Category]> {
+        return try req.parameters.next(Acronym.self).flatMap(to: [Category].self) { ac in
+            try ac.categories.query(on: req).all()
+        }
+    }
+    
+    func removeCategoriesHandler(_ req: Request) throws -> Future<HTTPStatus> {
+        return try flatMap(to: HTTPStatus.self, req.parameters.next(Acronym.self), req.parameters.next(Category.self)) {
+            acc, cat in
+            return acc.categories.detach(cat, on: req).transform(to: HTTPStatus.noContent)
+        }
+        
     }
     
 }

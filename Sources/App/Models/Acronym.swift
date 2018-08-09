@@ -19,6 +19,11 @@ extension Acronym {
     var user: Parent<Acronym, User> {
         return parent(\.userID)
     }
+    
+    var categories : Siblings<Acronym, Category, AcronymCategoryPivot> {
+        // calling 'siblings' returns all related categories THROUGH this pivot table.
+        return siblings()
+    }
 }
 
 // this will automatically set the associatedTypes for database, id, idKey
@@ -36,5 +41,6 @@ extension Acronym: Migration {
             
             // create the foreign key constraints
             builder.reference(from: \.userID, to: \User.id)
-        } }
+        }
+    }
 }
