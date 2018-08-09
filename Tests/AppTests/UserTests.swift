@@ -5,7 +5,10 @@
 //  Created by Zach McArtor on 8/9/18.
 //
 
+@testable import App
+import Vapor
 import XCTest
+import FluentPostgreSQL
 
 class UserTests: XCTestCase {
     
