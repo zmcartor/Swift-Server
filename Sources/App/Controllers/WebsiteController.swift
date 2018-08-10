@@ -7,10 +7,17 @@ struct IndexContext: Encodable {
     let acronyms: [Acronym]?
 }
 
+struct AcronymContext: Encodable {
+    let title: String
+    let acronym: Acronym
+    let user: User
+}
+
 struct WebsiteController: RouteCollection {
 
     func boot(router: Router) throws {
         router.get(use: indexHandler)
+        router.get("acronyms", Acronym.parameter, use: acronymHandler)
     }
     
     func indexHandler(_ req: Request) throws -> Future<View> {
@@ -21,8 +28,20 @@ struct WebsiteController: RouteCollection {
             let context = IndexContext(title: "Acronyms", acronyms: acroData)
             return try req.view().render("index", context)
         }
+    }
+    
+    func acronymHandler(_ req: Request) throws -> Future<View> {
         
-        let context = IndexContext(title: "Whompers!!")
-        return try req.view().render("index", context)
+        // save off our variables since there is no easy way to inject 'next' varibles into future.
+        var theAcro:Acronym?
+        
+        return try req.parameters.next(Acronym.self).flatMap(to: User.self) { acro in
+            theAcro = acro
+            return acro.user.get(on: req)
+        }
+        .flatMap(to:View.self) { user in
+            let context = AcronymContext(title: "An Acro", acronym: theAcro!, user: user)
+            return try req.view().render("acronym", context)
+        }
     }
 }
